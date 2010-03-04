@@ -1,7 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  
   <parent>
     <groupId>org.jboss.spec</groupId>
-    <artifactId>jboss-spec-parent</artifactId>
+    <artifactId>jboss-specs-parent</artifactId>
     <version>1.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -10,21 +11,22 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Expression Language 2.2 API</name>
-  <url>http://www.jboss.org</url>
   <description>The Expression Language 2.2 API classes</description>
+  
   <reporting>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
-          <doctitle>Expression Language ${project.version} API Documentation</doctitle>
+          <doctitle>Expression Language 2.2 API Documentation</doctitle>
           <links>
             <link>http://java.sun.com/j2se/1.5/docs/api</link>
           </links>
-          <windowtitle>Expression Language ${project.version} API Documentation</windowtitle>
+          <windowtitle>Expression Language 2.2 API Documentation</windowtitle>
         </configuration>
       </plugin>
     </plugins>
   </reporting>
+  
 </project>
