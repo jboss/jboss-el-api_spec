@@ -31,20 +31,4 @@
     <url>https://github.com/jboss/jboss-el-api_spec</url>
   </scm>
   
-  <reporting>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-javadoc-plugin</artifactId>
-        <configuration>
-          <doctitle>Expression Language 2.2 API Documentation</doctitle>
-          <links>
-            <link>http://java.sun.com/j2se/1.5/docs/api</link>
-          </links>
-          <windowtitle>Expression Language 2.2 API Documentation</windowtitle>
-        </configuration>
-      </plugin>
-    </plugins>
-  </reporting>
-  
 </project>
