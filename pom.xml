@@ -6,7 +6,7 @@
   <parent>
     <groupId>org.jboss</groupId>
     <artifactId>jboss-parent</artifactId>
-    <version>8</version>
+    <version>9</version>
   </parent>
   
   <groupId>org.jboss.spec.javax.el</groupId>
@@ -36,4 +36,35 @@
     <url>https://github.com/jboss/jboss-el-api_spec</url>
   </scm>
   
+  <build>
+    <plugins>
+      <!-- Include LICENSE.txt in the META-INF directory -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-resources</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <resources>          
+                <resource>
+                  <directory>${basedir}</directory>
+                  <includes>
+                    <include>LICENSE</include>
+                    <include>README</include>
+                  </includes>
+                </resource>
+              </resources>              
+              <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
+            </configuration>            
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
