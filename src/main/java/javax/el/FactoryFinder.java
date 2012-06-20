@@ -54,18 +54,17 @@
 
 package javax.el;
 
-import java.lang.reflect.Constructor;
-import java.io.InputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.lang.reflect.Constructor;
 import java.util.Properties;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+
+import org.jboss.el.cache.FactoryFinderCache;
 
 class FactoryFinder {
 
     /**
-     * Creates an instance of the specified class using the specified 
+     * Creates an instance of the specified class using the specified
      * <code>ClassLoader</code> object.
      *
      * @exception ELException if the given class could not be found
@@ -133,31 +132,10 @@ class FactoryFinder {
             throw new ELException(x.toString(), x);
         }
 
-        String serviceId = "META-INF/services/" + factoryId;
-        // try to find services in CLASSPATH
-        try {
-            InputStream is=null;
-            if (classLoader == null) {
-                is=ClassLoader.getSystemResourceAsStream(serviceId);
-            } else {
-                is=classLoader.getResourceAsStream(serviceId);
-            }
-        
-            if( is!=null ) {
-                BufferedReader rd =
-                    new BufferedReader(new InputStreamReader(is, "UTF-8"));
-        
-                String factoryClassName = rd.readLine();
-                rd.close();
-
-                if (factoryClassName != null &&
-                    ! "".equals(factoryClassName)) {
-                    return newInstance(factoryClassName, classLoader, properties);
-                }
-            }
-        } catch( Exception ex ) {
+        final String deploymentFactoryClassName = FactoryFinderCache.loadImplementationClassName(factoryId, classLoader);
+        if(deploymentFactoryClassName != null && !deploymentFactoryClassName.equals("")) {
+            return newInstance(deploymentFactoryClassName, classLoader, properties);
         }
-        
 
         // try to read from $java.home/lib/el.properties
         try {
