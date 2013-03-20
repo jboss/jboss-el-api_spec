@@ -1,7 +1,7 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
@@ -36,43 +36,41 @@
  * and therefore, elected the GPL Version 2 license, then the option applies
  * only if the new code is made subject to such option by the copyright
  * holder.
- *
- *
- * This file incorporates work covered by the following copyright and
- * permission notice:
- *
- * Copyright 2004 The Apache Software Foundation
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
  */
 
 package javax.el;
 
 /**
  * The listener interface for receiving notification when an
- * {@link ELContext} is created.
+ * EL expression is evaluated.
  *
- * @see ELContext
- * @see ELContextEvent
- * @since JSP 2.1
+ * @since EL 3.0
  */
-public interface ELContextListener extends java.util.EventListener {
+public abstract class EvaluationListener {
 
     /**
-     * Invoked when a new <code>ELContext</code> has been created.
-     *
-     * @param ece the notification event.
+     * Receives notification before an EL expression is evaluated
+     * @param context The ELContext
+     * @param expression The EL expression string to be evaluated
      */
-    public void contextCreated(ELContextEvent ece);
+    public void beforeEvaluation(ELContext context, String expression) {
+    }
+
+    /**
+     * Receives notification after an EL expression is evaluated
+     * @param context The ELContext
+     * @param expression The EL expression string to be evaluated
+     */
+    public void afterEvaluation(ELContext context, String expression) {
+    }
+
+    /**
+     * Receives notification when the (base, property) pair is resolved
+     * @param context The ELContext
+     * @param base The base object
+     * @param property The property object
+     */
+    public void propertyResolved(ELContext context, Object base, Object property) {
+    }
 
 }

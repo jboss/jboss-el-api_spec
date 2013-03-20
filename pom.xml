@@ -6,16 +6,16 @@
   <parent>
     <groupId>org.jboss</groupId>
     <artifactId>jboss-parent</artifactId>
-    <version>9</version>
+    <version>10</version>
   </parent>
   
   <groupId>org.jboss.spec.javax.el</groupId>
-  <artifactId>jboss-el-api_2.2_spec</artifactId>
-  <version>1.0.3.Final-SNAPSHOT</version>
+  <artifactId>jboss-el-api_3.0_spec</artifactId>
+  <version>1.0.0.Alpha1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Expression Language 2.2 API</name>
-  <description>JSR-000245 Expression Language 2.2 API</description>
+  <name>Expression Language 3.0 API</name>
+  <description>JSR-341 Expression Language 3.0 API</description>
   
   <licenses>
     <license>
@@ -85,12 +85,12 @@
             </manifest>
           </archive>
           <instructions>
-            <Specification-Title>JSR-000245 Expression Language API</Specification-Title>
+            <Specification-Title>JSR-341 Expression Language API</Specification-Title>
             <Specification-Vendor>Oracle</Specification-Vendor>
-            <Specification-Version>2.2</Specification-Version>
+            <Specification-Version>3.0</Specification-Version>
             <!-- Set the package version to match the spec version -->
             <Export-Package>
-              javax.el*;version=2.2
+              javax.el*;version=3.0
             </Export-Package>
           </instructions>
         </configuration>
@@ -112,9 +112,9 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Specification-Title>JSR-000245 Expression Language 2.2 API</Specification-Title>
+              <Specification-Title>JSR-341 Expression Language API</Specification-Title>
               <Specification-Vendor>Oracle</Specification-Vendor>
-              <Specification-Version>2.2</Specification-Version>
+              <Specification-Version>3.0</Specification-Version>
             </manifestEntries>
           </archive>
         </configuration>
