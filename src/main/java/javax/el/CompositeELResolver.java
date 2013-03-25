@@ -1,27 +1,31 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright 1997-2008 Sun Microsystems, Inc. All rights reserved.
+ * Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
  * and Distribution License("CDDL") (collectively, the "License").  You
- * may not use this file except in compliance with the License. You can obtain
- * a copy of the License at https://glassfish.dev.java.net/public/CDDL+GPL.html
- * or glassfish/bootstrap/legal/LICENSE.txt.  See the License for the specific
+ * may not use this file except in compliance with the License.  You can
+ * obtain a copy of the License at
+ * https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+ * or packager/legal/LICENSE.txt.  See the License for the specific
  * language governing permissions and limitations under the License.
  *
  * When distributing the software, include this License Header Notice in each
- * file and include the License file at glassfish/bootstrap/legal/LICENSE.txt.
- * Sun designates this particular file as subject to the "Classpath" exception
- * as provided by Sun in the GPL Version 2 section of the License file that
- * accompanied this code.  If applicable, add the following below the License
- * Header, with the fields enclosed by brackets [] replaced by your own
- * identifying information: "Portions Copyrighted [year]
- * [name of copyright owner]"
+ * file and include the License file at packager/legal/LICENSE.txt.
+ *
+ * GPL Classpath Exception:
+ * Oracle designates this particular file as subject to the "Classpath"
+ * exception as provided by Oracle in the GPL Version 2 section of the License
+ * file that accompanied this code.
+ *
+ * Modifications:
+ * If applicable, add the following below the License Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
+ * "Portions Copyright [year] [name of copyright owner]"
  *
  * Contributor(s):
- *
  * If you wish your version of this file to be governed by only the CDDL or
  * only the GPL Version 2, indicate your decision by adding "[Contributor]
  * elects to include this software in this distribution under the [CDDL or GPL
@@ -51,7 +55,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
 
 package javax.el;
 
@@ -94,6 +97,11 @@ import java.beans.FeatureDescriptor;
  */
 public class CompositeELResolver extends ELResolver {
 
+    public CompositeELResolver() {
+        this.size = 0;
+        this.elResolvers = new ELResolver[16];
+    }
+
     /**
      * Adds the given resolver to the list of component resolvers.
      *
@@ -108,8 +116,14 @@ public class CompositeELResolver extends ELResolver {
         if (elResolver == null) {
             throw new NullPointerException();
         }
-                                                                                
-        elResolvers.add(elResolver);
+
+        if (size >= elResolvers.length) {
+            ELResolver[] newResolvers = new ELResolver[size * 2];
+            System.arraycopy(elResolvers, 0, newResolvers, 0, size);
+            elResolvers = newResolvers;
+        }
+
+        elResolvers[size++] = elResolver;
     }
 
     /**
@@ -166,17 +180,15 @@ public class CompositeELResolver extends ELResolver {
     public Object getValue(ELContext context,
                            Object base,
                            Object property) {
+
         context.setPropertyResolved(false);
-        int i = 0, len = this.elResolvers.size();
-        ELResolver elResolver;
-        Object value; 
-        while (i < len) {
-            elResolver = this.elResolvers.get(i);
-            value = elResolver.getValue(context, base, property);
+
+        Object value = null; 
+        for (int i = 0; i < size; i++) {
+            value = elResolvers[i].getValue(context, base, property);
             if (context.isPropertyResolved()) {
                 return value;
             }
-            i++;
         } 
         return null;
     }
@@ -219,8 +231,7 @@ public class CompositeELResolver extends ELResolver {
      * @param context The context of this evaluation.
      * @param base The bean on which to invoke the method
      * @param method The simple name of the method to invoke.
-     *     Will be coerced to a <code>String</code>.  If method is
-     *     "<init>"or "<clinit>" a NoSuchMethodException is raised.
+     *     Will be coerced to a <code>String</code>.
      * @param paramTypes An array of Class objects identifying the
      *     method's formal parameter types, in declared order.
      *     Use an empty array if the method has no parameters.
@@ -237,17 +248,16 @@ public class CompositeELResolver extends ELResolver {
                          Object method,
                          Class<?>[] paramTypes,
                          Object[] params) {
+
         context.setPropertyResolved(false);
-        int i = 0, len = this.elResolvers.size();
-        ELResolver elResolver;
+
         Object value;
-        while (i < len) {
-            elResolver = this.elResolvers.get(i);
-            value = elResolver.invoke(context, base, method, paramTypes, params);
+        for (int i = 0; i < size; i++) {
+            value = elResolvers[i].invoke(context, base, method,
+                                          paramTypes, params);
             if (context.isPropertyResolved()) {
                 return value;
             }
-            i++;
         }
         return null;
     }
@@ -309,17 +319,15 @@ public class CompositeELResolver extends ELResolver {
     public Class<?> getType(ELContext context,
                          Object base,
                          Object property) {
+
         context.setPropertyResolved(false);
-        int i = 0, len = this.elResolvers.size();
-        ELResolver elResolver;
+
         Class<?> type;  
-        while (i < len) {
-            elResolver = this.elResolvers.get(i);
-            type = elResolver.getType(context, base, property);
+        for (int i = 0; i < size; i++) {
+            type = elResolvers[i].getType(context, base, property);
             if (context.isPropertyResolved()) {
                 return type;
             }
-            i++;
         }
         return null;
     }
@@ -378,16 +386,14 @@ public class CompositeELResolver extends ELResolver {
                          Object base,
                          Object property,
                          Object val) {
+
         context.setPropertyResolved(false);
-        int i = 0, len = this.elResolvers.size();
-        ELResolver elResolver;
-        while (i < len) {
-            elResolver = this.elResolvers.get(i);
-            elResolver.setValue(context, base, property, val);
+
+        for (int i = 0; i < size; i++) {
+            elResolvers[i].setValue(context, base, property, val);
             if (context.isPropertyResolved()) {
                 return;
             }
-            i++;
         }
     }
 
@@ -447,17 +453,15 @@ public class CompositeELResolver extends ELResolver {
     public boolean isReadOnly(ELContext context,
                               Object base,
                               Object property) {
+
         context.setPropertyResolved(false);
-        int i = 0, len = this.elResolvers.size();
-        ELResolver elResolver;
+
         boolean readOnly;
-        while (i < len) {
-            elResolver = this.elResolvers.get(i);
-            readOnly = elResolver.isReadOnly(context, base, property);
+        for (int i = 0; i < size; i++) {
+            readOnly = elResolvers[i].isReadOnly(context, base, property);
             if (context.isPropertyResolved()) {
                 return readOnly;
             }
-            i++;
         }
         return false; // Does not matter
     }
@@ -491,7 +495,7 @@ public class CompositeELResolver extends ELResolver {
     public Iterator<FeatureDescriptor> getFeatureDescriptors(
                                           ELContext context,
                                           Object base) {
-        return new CompositeIterator(elResolvers.iterator(), context, base);
+        return new CompositeIterator(elResolvers, size, context, base);
     }
 
     /**
@@ -518,10 +522,9 @@ public class CompositeELResolver extends ELResolver {
     public Class<?> getCommonPropertyType(ELContext context,
                                                Object base) {
         Class<?> commonPropertyType = null;
-        Iterator<ELResolver> iter = elResolvers.iterator();
-        while (iter.hasNext()) {
-            ELResolver elResolver = iter.next();
-            Class<?> type = elResolver.getCommonPropertyType(context, base);
+        for (int i = 0; i < size; i++) {
+
+            Class<?> type = elResolvers[i].getCommonPropertyType(context, base);
             if (type == null) {
                 // skip this EL Resolver
                 continue;
@@ -539,29 +542,63 @@ public class CompositeELResolver extends ELResolver {
         return commonPropertyType;
     }
 
-    private final ArrayList<ELResolver> elResolvers =
-                                            new ArrayList<ELResolver>();
+    /**
+     * Converts an object to a specific type.
+     *
+     * <p>An <code>ELException</code> is thrown if an error occurs during
+     * the conversion.</p>
+     *
+     * @param context The context of this evaluation.
+     * @param obj The object to convert.
+     * @param targetType The target type for the convertion.
+     * @throws ELException thrown if errors occur.
+     *
+     * @since EL 3.0
+     */
+    @Override
+    public Object convertToType(ELContext context,
+                                Object obj,
+                                Class<?> targetType) {
+
+        context.setPropertyResolved(false);
+
+        Object value = null;
+        for (int i = 0; i < size; i++) {
+            value = elResolvers[i].convertToType(context, obj, targetType);
+            if (context.isPropertyResolved()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private ELResolver[] elResolvers;
+    private int size;
 
     private static class CompositeIterator
             implements Iterator<FeatureDescriptor> {
 
-        Iterator<ELResolver> compositeIter;
-        Iterator<FeatureDescriptor> propertyIter;
+        ELResolver[] resolvers;
+        int size;
+        int index = 0;
+        Iterator<FeatureDescriptor> propertyIter = null;
         ELContext context;
         Object base;
 
-        CompositeIterator(Iterator<ELResolver> iter,
+        CompositeIterator(ELResolver[] resolvers,
+                          int size,
                           ELContext context,
                           Object base) {
-            compositeIter = iter;
+            this.resolvers = resolvers;
+            this.size = size;
             this.context = context;
             this.base = base;
         }
 
         public boolean hasNext() {
             if (propertyIter == null || !propertyIter.hasNext()) {
-                while (compositeIter.hasNext()) {
-                    ELResolver elResolver = compositeIter.next();
+                while (index < size) {
+                    ELResolver elResolver = resolvers[index++];
                     propertyIter = elResolver.getFeatureDescriptors(
                         context, base);
                     if (propertyIter != null) {
@@ -575,8 +612,8 @@ public class CompositeELResolver extends ELResolver {
 
         public FeatureDescriptor next() {
             if (propertyIter == null || !propertyIter.hasNext()) {
-                while (compositeIter.hasNext()) {
-                    ELResolver elResolver = compositeIter.next();
+                while (index < size) {
+                    ELResolver elResolver = resolvers[index++];
                     propertyIter = elResolver.getFeatureDescriptors(
                         context, base);
                     if (propertyIter != null) {

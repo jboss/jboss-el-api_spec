@@ -1,27 +1,31 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright 1997-2008 Sun Microsystems, Inc. All rights reserved.
+ * Copyright (c) 1997-2012 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
  * and Distribution License("CDDL") (collectively, the "License").  You
- * may not use this file except in compliance with the License. You can obtain
- * a copy of the License at https://glassfish.dev.java.net/public/CDDL+GPL.html
- * or glassfish/bootstrap/legal/LICENSE.txt.  See the License for the specific
+ * may not use this file except in compliance with the License.  You can
+ * obtain a copy of the License at
+ * https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+ * or packager/legal/LICENSE.txt.  See the License for the specific
  * language governing permissions and limitations under the License.
  *
  * When distributing the software, include this License Header Notice in each
- * file and include the License file at glassfish/bootstrap/legal/LICENSE.txt.
- * Sun designates this particular file as subject to the "Classpath" exception
- * as provided by Sun in the GPL Version 2 section of the License file that
- * accompanied this code.  If applicable, add the following below the License
- * Header, with the fields enclosed by brackets [] replaced by your own
- * identifying information: "Portions Copyrighted [year]
- * [name of copyright owner]"
+ * file and include the License file at packager/legal/LICENSE.txt.
+ *
+ * GPL Classpath Exception:
+ * Oracle designates this particular file as subject to the "Classpath"
+ * exception as provided by Oracle in the GPL Version 2 section of the License
+ * file that accompanied this code.
+ *
+ * Modifications:
+ * If applicable, add the following below the License Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
+ * "Portions Copyright [year] [name of copyright owner]"
  *
  * Contributor(s):
- *
  * If you wish your version of this file to be governed by only the CDDL or
  * only the GPL Version 2, indicate your decision by adding "[Contributor]
  * elects to include this software in this distribution under the [CDDL or GPL
@@ -51,7 +55,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
 
 package javax.el;
 
@@ -59,8 +62,8 @@ import java.util.Iterator;
 import java.beans.FeatureDescriptor;
 
 /**
- * Enables customization of variable, property and method call resolution
- * behavior for EL expression evaluation.
+ * Enables customization of variable, property, method call, and type
+ * conversion resolution behavior for EL expression evaluation.
  *
  * <p>While evaluating an expression, the <code>ELResolver</code> associated
  * with the {@link ELContext} is consulted to do the initial resolution of 
@@ -92,12 +95,16 @@ import java.beans.FeatureDescriptor;
  * the variable resolution for <code>x</code>.</p>
  *
  * <p>In the case of method call resolution, the <code>base</code> parameter
- * indentifies the base object and the <code>method</code> parameter identifies
+ * identifies the base object and the <code>method</code> parameter identifies
  * a method on that base.  In the case of overloaded methods, the <code>
  * paramTypes</code> parameter can be optionally used to identify a method.
  * The <code>params</code>parameter are the parameters for the method call,
  * and can also be used for resolving overloaded methods when the
  * <code>paramTypes</code> parameter is not specified.
+ *
+ * <p>In the case of type conversion resolution, the <code>obj</code> parameter
+ * identifies the source object and the <code>targetType</code> parameter
+ * identifies the target type the source to covert to.
  *
  * <p>Though only a single <code>ELResolver</code> is associated with an
  * <code>ELContext</code>, there are usually multiple resolvers considered
@@ -105,7 +112,7 @@ import java.beans.FeatureDescriptor;
  * are combined together using {@link CompositeELResolver}s, to define
  * rich semantics for evaluating an expression.</p>
  *
- * <p>For the {@link #getValue}, {@link #getType}, {@link #setValue} and
+ * <p>For the {@link #getValue}, {@link #getType}, {@link #setValue}, and
  * {@link #isReadOnly} methods, an <code>ELResolver</code> is not
  * responsible for resolving all possible (base, property) pairs. In fact,
  * most resolvers will only handle a <code>base</code> of a single type.
@@ -116,6 +123,11 @@ import java.beans.FeatureDescriptor;
  * must ignore the return value of the method if <code>propertyResolved</code>
  * is <code>false</code>.</p>
  *
+ * <p>Similarly, for the {@link #convertToType} method an
+ * <code>ELResolver</code>
+ * must set the <code>propertyResolved</code> to <code>true</code> to indicate
+ * that it handles the conversion of the object to the target type.</p>
+ * 
  * <p>The {@link #getFeatureDescriptors} and {@link #getCommonPropertyType}
  * methods are primarily designed for design-time tool support, but must
  * handle invocation at runtime as well. The 
@@ -251,7 +263,6 @@ public abstract class ELResolver {
      * @return If the <code>propertyResolved</code> property of 
      *     <code>ELContext</code> was set to <code>true</code>, then
      *     the most general acceptable type; otherwise undefined.
-     * @throws NullPointerException if context is <code>null</code>
      * @throws PropertyNotFoundException if the given (base, property) pair
      *     is handled by this <code>ELResolver</code> but the specified
      *     variable or property does not exist or is not readable.
@@ -296,6 +307,7 @@ public abstract class ELResolver {
                                   Object base,
                                   Object property,
                                   Object value);
+
 
     /**
      * For a given <code>base</code> and <code>property</code>, attempts to
@@ -422,5 +434,21 @@ public abstract class ELResolver {
      */
     public abstract Class<?> getCommonPropertyType(ELContext context,
                                                 Object base);
-                    
+
+    /**
+     * Converts an object to a specific type.
+     *
+     * <p>An <code>ELException</code> is thrown if an error occurs during
+     * the conversion.</p>
+     *
+     * @param context The context of this evaluation.
+     * @param obj The object to convert.
+     * @param targetType The target type for the convertion.
+     * @throws ELException thrown if errors occur.
+     */
+    public Object convertToType(ELContext context,
+                                Object obj,
+                                Class<?> targetType) {
+        return null;
+    }
 }
