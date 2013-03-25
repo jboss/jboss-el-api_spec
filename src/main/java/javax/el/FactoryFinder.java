@@ -1,27 +1,31 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright 1997-2008 Sun Microsystems, Inc. All rights reserved.
+ * Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
  * and Distribution License("CDDL") (collectively, the "License").  You
- * may not use this file except in compliance with the License. You can obtain
- * a copy of the License at https://glassfish.dev.java.net/public/CDDL+GPL.html
- * or glassfish/bootstrap/legal/LICENSE.txt.  See the License for the specific
+ * may not use this file except in compliance with the License.  You can
+ * obtain a copy of the License at
+ * https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+ * or packager/legal/LICENSE.txt.  See the License for the specific
  * language governing permissions and limitations under the License.
  *
  * When distributing the software, include this License Header Notice in each
- * file and include the License file at glassfish/bootstrap/legal/LICENSE.txt.
- * Sun designates this particular file as subject to the "Classpath" exception
- * as provided by Sun in the GPL Version 2 section of the License file that
- * accompanied this code.  If applicable, add the following below the License
- * Header, with the fields enclosed by brackets [] replaced by your own
- * identifying information: "Portions Copyrighted [year]
- * [name of copyright owner]"
+ * file and include the License file at packager/legal/LICENSE.txt.
+ *
+ * GPL Classpath Exception:
+ * Oracle designates this particular file as subject to the "Classpath"
+ * exception as provided by Oracle in the GPL Version 2 section of the License
+ * file that accompanied this code.
+ *
+ * Modifications:
+ * If applicable, add the following below the License Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
+ * "Portions Copyright [year] [name of copyright owner]"
  *
  * Contributor(s):
- *
  * If you wish your version of this file to be governed by only the CDDL or
  * only the GPL Version 2, indicate your decision by adding "[Contributor]
  * elects to include this software in this distribution under the [CDDL or GPL
@@ -54,17 +58,18 @@
 
 package javax.el;
 
+import java.lang.reflect.Constructor;
+import java.io.InputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.lang.reflect.Constructor;
 import java.util.Properties;
-
-import org.jboss.el.cache.FactoryFinderCache;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 class FactoryFinder {
 
     /**
-     * Creates an instance of the specified class using the specified
+     * Creates an instance of the specified class using the specified 
      * <code>ClassLoader</code> object.
      *
      * @exception ELException if the given class could not be found
@@ -75,7 +80,7 @@ class FactoryFinder {
                                       Properties properties)
     {
         try {
-            Class spiClass;
+            Class<?> spiClass;
             if (classLoader == null) {
                 spiClass = Class.forName(className);
             } else {
@@ -132,10 +137,31 @@ class FactoryFinder {
             throw new ELException(x.toString(), x);
         }
 
-        final String deploymentFactoryClassName = FactoryFinderCache.loadImplementationClassName(factoryId, classLoader);
-        if(deploymentFactoryClassName != null && !deploymentFactoryClassName.equals("")) {
-            return newInstance(deploymentFactoryClassName, classLoader, properties);
+        String serviceId = "META-INF/services/" + factoryId;
+        // try to find services in CLASSPATH
+        try {
+            InputStream is=null;
+            if (classLoader == null) {
+                is=ClassLoader.getSystemResourceAsStream(serviceId);
+            } else {
+                is=classLoader.getResourceAsStream(serviceId);
+            }
+        
+            if( is!=null ) {
+                BufferedReader rd =
+                    new BufferedReader(new InputStreamReader(is, "UTF-8"));
+        
+                String factoryClassName = rd.readLine();
+                rd.close();
+
+                if (factoryClassName != null &&
+                    ! "".equals(factoryClassName)) {
+                    return newInstance(factoryClassName, classLoader, properties);
+                }
+            }
+        } catch( Exception ex ) {
         }
+        
 
         // try to read from $java.home/lib/el.properties
         try {

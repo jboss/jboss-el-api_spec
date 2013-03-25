@@ -1,27 +1,31 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright 1997-2008 Sun Microsystems, Inc. All rights reserved.
+ * Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
  * and Distribution License("CDDL") (collectively, the "License").  You
- * may not use this file except in compliance with the License. You can obtain
- * a copy of the License at https://glassfish.dev.java.net/public/CDDL+GPL.html
- * or glassfish/bootstrap/legal/LICENSE.txt.  See the License for the specific
+ * may not use this file except in compliance with the License.  You can
+ * obtain a copy of the License at
+ * https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+ * or packager/legal/LICENSE.txt.  See the License for the specific
  * language governing permissions and limitations under the License.
  *
  * When distributing the software, include this License Header Notice in each
- * file and include the License file at glassfish/bootstrap/legal/LICENSE.txt.
- * Sun designates this particular file as subject to the "Classpath" exception
- * as provided by Sun in the GPL Version 2 section of the License file that
- * accompanied this code.  If applicable, add the following below the License
- * Header, with the fields enclosed by brackets [] replaced by your own
- * identifying information: "Portions Copyrighted [year]
- * [name of copyright owner]"
+ * file and include the License file at packager/legal/LICENSE.txt.
+ *
+ * GPL Classpath Exception:
+ * Oracle designates this particular file as subject to the "Classpath"
+ * exception as provided by Oracle in the GPL Version 2 section of the License
+ * file that accompanied this code.
+ *
+ * Modifications:
+ * If applicable, add the following below the License Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
+ * "Portions Copyright [year] [name of copyright owner]"
  *
  * Contributor(s):
- *
  * If you wish your version of this file to be governed by only the CDDL or
  * only the GPL Version 2, indicate your decision by adding "[Contributor]
  * elects to include this software in this distribution under the [CDDL or GPL
@@ -51,14 +55,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
 
 package javax.el;
 
 /**
  * An <code>Expression</code> that refers to a method on an object.
  *
- * <p>The {@link ExpressionFactory#createMethodExpression} method
+ * <p>The {@link javax.el.ExpressionFactory#createMethodExpression} method
  * can be used to parse an expression string and return a concrete instance
  * of <code>MethodExpression</code> that encapsulates the parsed expression.
  * The {@link FunctionMapper} is used at parse time, not evaluation time, 
@@ -69,7 +72,8 @@ package javax.el;
  * expression each time they are called. The {@link ELResolver} in the 
  * <code>ELContext</code> is used to resolve the top-level variables and to 
  * determine the behavior of the <code>.</code> and <code>[]</code> 
- * operators. For any of the two methods, the {@link ELResolver#getValue} 
+ * operators. For any of the two methods, the
+ * {@link javax.el.ELResolver#getValue} 
  * method is used to resolve all properties up to but excluding the last 
  * one. This provides the <code>base</code> object on which the method
  * appears. If the <code>base</code> object is null, a 
@@ -126,7 +130,7 @@ public abstract class MethodExpression extends Expression
      * the method invocation.
      *
      * Any parameters passed to this method is ignored if isLiteralText()
-     * or isParametersProvided() is true.
+     * or isParmetersProvided() is true.
      *
      * @param context The context of this evaluation.
      * @param params The parameters to pass to the method, or
@@ -164,7 +168,15 @@ public abstract class MethodExpression extends Expression
      *    parameters, <code>false</code> otherwise.
      * @since EL 2.2
      */
-    public boolean isParmetersProvided() {
+    public boolean isParametersProvided() {
         return false;
+    }
+
+    /**
+     * Use isParametersProvided instead.
+     */
+    @Deprecated
+    public boolean isParmetersProvided() {
+        return isParametersProvided();
     }
 }

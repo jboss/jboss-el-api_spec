@@ -1,27 +1,31 @@
 /*
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS HEADER.
  *
- * Copyright 1997-2008 Sun Microsystems, Inc. All rights reserved.
+ * Copyright (c) 1997-2011 Oracle and/or its affiliates. All rights reserved.
  *
  * The contents of this file are subject to the terms of either the GNU
  * General Public License Version 2 only ("GPL") or the Common Development
  * and Distribution License("CDDL") (collectively, the "License").  You
- * may not use this file except in compliance with the License. You can obtain
- * a copy of the License at https://glassfish.dev.java.net/public/CDDL+GPL.html
- * or glassfish/bootstrap/legal/LICENSE.txt.  See the License for the specific
+ * may not use this file except in compliance with the License.  You can
+ * obtain a copy of the License at
+ * https://glassfish.dev.java.net/public/CDDL+GPL_1_1.html
+ * or packager/legal/LICENSE.txt.  See the License for the specific
  * language governing permissions and limitations under the License.
  *
  * When distributing the software, include this License Header Notice in each
- * file and include the License file at glassfish/bootstrap/legal/LICENSE.txt.
- * Sun designates this particular file as subject to the "Classpath" exception
- * as provided by Sun in the GPL Version 2 section of the License file that
- * accompanied this code.  If applicable, add the following below the License
- * Header, with the fields enclosed by brackets [] replaced by your own
- * identifying information: "Portions Copyrighted [year]
- * [name of copyright owner]"
+ * file and include the License file at packager/legal/LICENSE.txt.
+ *
+ * GPL Classpath Exception:
+ * Oracle designates this particular file as subject to the "Classpath"
+ * exception as provided by Oracle in the GPL Version 2 section of the License
+ * file that accompanied this code.
+ *
+ * Modifications:
+ * If applicable, add the following below the License Header, with the fields
+ * enclosed by brackets [] replaced by your own identifying information:
+ * "Portions Copyright [year] [name of copyright owner]"
  *
  * Contributor(s):
- *
  * If you wish your version of this file to be governed by only the CDDL or
  * only the GPL Version 2, indicate your decision by adding "[Contributor]
  * elects to include this software in this distribution under the [CDDL or GPL
@@ -51,7 +55,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- 
 
 package javax.el;
 
@@ -59,6 +62,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.ref.SoftReference;
+import java.lang.ref.ReferenceQueue;
 import java.beans.FeatureDescriptor;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
@@ -109,16 +113,73 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BeanELResolver extends ELResolver {
 
+    static private class BPSoftReference extends SoftReference<BeanProperties> {
+        final Class<?> key;
+        BPSoftReference(Class<?> key, BeanProperties beanProperties,
+                        ReferenceQueue<BeanProperties> refQ) {
+            super(beanProperties, refQ);
+            this.key = key;
+        }
+    }
+
+    static private class SoftConcurrentHashMap extends
+                ConcurrentHashMap<Class<?>, BeanProperties> {
+
+        private static final int CACHE_INIT_SIZE = 1024;
+        private ConcurrentHashMap<Class<?>, BPSoftReference> map =
+            new ConcurrentHashMap<Class<?>, BPSoftReference>(CACHE_INIT_SIZE);
+        private ReferenceQueue<BeanProperties> refQ =
+                        new ReferenceQueue<BeanProperties>();
+
+        // Remove map entries that have been placed on the queue by GC.
+        private void cleanup() {
+            BPSoftReference BPRef = null;
+            while ((BPRef = (BPSoftReference)refQ.poll()) != null) {
+                map.remove(BPRef.key);
+            }
+        }
+
+        @Override
+        public BeanProperties put(Class<?> key, BeanProperties value) {
+            cleanup();
+            BPSoftReference prev =
+                map.put(key, new BPSoftReference(key, value, refQ));
+            return prev == null? null: prev.get();
+        }
+
+        @Override
+        public BeanProperties putIfAbsent(Class<?> key, BeanProperties value) {
+            cleanup();
+            BPSoftReference prev =
+                map.putIfAbsent(key, new BPSoftReference(key, value, refQ));
+            return prev == null? null: prev.get();
+        }
+
+        @Override
+        public BeanProperties get(Object key) {
+            cleanup();
+            BPSoftReference BPRef = map.get(key);
+            if (BPRef == null) {
+                return null;
+            }
+            if (BPRef.get() == null) {
+                // value has been garbage collected, remove entry in map
+                map.remove(key);
+                return null;
+            }
+            return BPRef.get();
+        }
+    }
+
     private boolean isReadOnly;
 
-     private static final int CACHE_SIZE = 1024;
-     private static final ConcurrentHashMap<Class, BeanProperties> properties =
-         new ConcurrentHashMap<Class, BeanProperties>(CACHE_SIZE);
+    private static final SoftConcurrentHashMap properties =
+                new SoftConcurrentHashMap();
 
     /*
      * Defines a property for a bean.
      */
-    protected final static class BeanProperty {
+    final static class BeanProperty {
 
         private Method readMethod;
         private Method writeMethod;
@@ -151,7 +212,7 @@ public class BeanELResolver extends ELResolver {
     /*
      * Defines the properties for a bean.
      */
-    protected final static class BeanProperties {
+    final static class BeanProperties {
 
         private final Map<String, BeanProperty> propertyMap =
             new HashMap<String, BeanProperty>();
@@ -300,7 +361,7 @@ public class BeanELResolver extends ELResolver {
         Object value;
         try {
             value = method.invoke(base, new Object[0]);
-            context.setPropertyResolved(true);
+            context.setPropertyResolved(base, property);
         } catch (ELException ex) {
             throw ex;
         } catch (InvocationTargetException ite) {
@@ -379,7 +440,7 @@ public class BeanELResolver extends ELResolver {
 
         try {
             method.invoke(base, new Object[] {val});
-            context.setPropertyResolved(true);
+            context.setPropertyResolved(base, property);
         } catch (ELException ex) {
             throw ex;
         } catch (InvocationTargetException ite) {
@@ -463,9 +524,17 @@ public class BeanELResolver extends ELResolver {
         if (base == null || method == null) {
             return null;
         }
-        Method m = findMethod(base, method.toString(), paramTypes, params);
-        Object ret = invokeMethod(m, base, params);
-        context.setPropertyResolved(true);
+        Method m = ELUtil.findMethod(base.getClass(), method.toString(),
+                                    paramTypes,params, false);
+        for (Object p: params) {
+            // If the parameters is a LambdaExpression, set the ELContext
+            // for its evaluation
+            if (p instanceof javax.el.LambdaExpression) {
+                ((javax.el.LambdaExpression) p).setELContext(context);
+            }
+        }
+        Object ret = ELUtil.invokeMethod(context, m, base, params);
+        context.setPropertyResolved(base, method);
         return ret;
     }
 
@@ -610,7 +679,7 @@ public class BeanELResolver extends ELResolver {
      * same method must be found in a superclass or interface.
      **/
 
-    static private Method getMethod(Class cl, Method method) {
+    static private Method getMethod(Class<?> cl, Method method) {
 
         if (method == null) {
             return null;
@@ -619,9 +688,9 @@ public class BeanELResolver extends ELResolver {
         if (Modifier.isPublic (cl.getModifiers ())) {
             return method;
         }
-        Class [] interfaces = cl.getInterfaces ();
+        Class<?> [] interfaces = cl.getInterfaces ();
         for (int i = 0; i < interfaces.length; i++) {
-            Class c = interfaces[i];
+            Class<?> c = interfaces[i];
             Method m = null;
             try {
                 m = c.getMethod(method.getName(), method.getParameterTypes());
@@ -631,7 +700,7 @@ public class BeanELResolver extends ELResolver {
             } catch (NoSuchMethodException ex) {
             }
         }
-        Class c = cl.getSuperclass();
+        Class<?> c = cl.getSuperclass();
         if (c != null) {
             Method m = null;
             try {
@@ -654,7 +723,7 @@ public class BeanELResolver extends ELResolver {
         BeanProperties bps = properties.get(baseClass);
         if (bps == null) {
             bps = new BeanProperties(baseClass);
-            properties.putIfAbsent(baseClass, bps);
+            properties.put(baseClass, bps);
         }
         BeanProperty bp = bps.getBeanProperty(property);
         if (bp == null) {
@@ -665,79 +734,6 @@ public class BeanELResolver extends ELResolver {
                                            property}));
         }
         return bp;
-    }
-
-    private void removeFromMap(Map<Class, BeanProperties> map,
-                               ClassLoader classloader) {
-        Iterator<Class> iter = map.keySet().iterator();
-        while (iter.hasNext()) {
-            Class mbeanClass = iter.next();
-            if (classloader.equals(mbeanClass.getClassLoader())) {
-                iter.remove();
-            }
-        }
-
-    }
-
-    /*
-     * This method is not part of the API, though it can be used (reflectively)
-     * by clients of this class to remove entries from the cache when the beans
-     * are being unloaded.
-     *
-     * A note about why WeakHashMap is not used.  Measurements has shown 
-     * that ConcurrentHashMap is much more scalable than synchronized
-     * WeakHashMap.  A manual purge seems to be a good compromise.
-     *
-     * @param classloader The classLoader used to load the beans.
-     */
-    private void purgeBeanClasses(ClassLoader classloader) {
-        removeFromMap(properties, classloader);
-    }
-
-    private Method findMethod(Object base, String method,
-                              Class<?>[] paramTypes, Object[] params) {
-
-        Class<?>beanClass = base.getClass();
-        if (paramTypes != null) {
-            try {
-                return beanClass.getMethod(method, paramTypes);
-            } catch (java.lang.NoSuchMethodException ex) {
-                throw new MethodNotFoundException(ex);
-            }
-        }
-        for (Method m: base.getClass().getMethods()) {
-            if (m.getName().equals(method) && (
-                         m.isVarArgs() ||
-                         m.getParameterTypes().length==params.length)){
-                return m;
-            }
-        }
-        throw new MethodNotFoundException("Method " + method + " not found");
-    }
-
-    private Object invokeMethod(Method m, Object base, Object[] params) {
-
-        Class[] parameterTypes = m.getParameterTypes();
-        Object[] parameters = null;
-        if (parameterTypes.length > 0) {
-            ExpressionFactory exprFactory = ExpressionFactory.newInstance();
-            if (m.isVarArgs()) {
-                // TODO
-            } else {
-                parameters = new Object[parameterTypes.length];
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    parameters[i] = exprFactory.coerceToType(params[i],
-                                                           parameterTypes[i]);
-                }
-            }
-        }
-        try {
-            return m.invoke(base, parameters);
-        } catch (IllegalAccessException iae) {
-            throw new ELException(iae);
-        } catch (InvocationTargetException ite) {
-            throw new ELException(ite.getCause());
-        }
     }
 }
 
