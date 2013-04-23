@@ -196,7 +196,7 @@ public abstract class ExpressionFactory {
     public static ExpressionFactory newInstance(Properties properties) {
         return (ExpressionFactory) FactoryFinder.find(
             "javax.el.ExpressionFactory",
-            "org.apache.el.ExpressionFactoryImpl",
+            "com.sun.el.ExpressionFactoryImpl",
             properties);
     }
 
