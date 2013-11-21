@@ -68,6 +68,8 @@ import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.beans.IntrospectionException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.Map;
@@ -533,6 +535,15 @@ public class BeanELResolver extends ELResolver {
                 ((javax.el.LambdaExpression) p).setELContext(context);
             }
         }
+
+        // If m is a public method in a non-public class that implements a public interface
+        // or has a public superclass, suppress Java access checking to work around JDK-4071957
+        if ((!Modifier.isPublic(m.getDeclaringClass().getModifiers())) &&
+                Modifier.isPublic(m.getModifiers()) &&
+                (getMethodFromInterfaceOrSuperclass(m.getDeclaringClass(), m) != null)) {
+            setAccessible(m);
+        }
+
         Object ret = ELUtil.invokeMethod(context, m, base, params);
         context.setPropertyResolved(base, method);
         return ret;
@@ -688,6 +699,17 @@ public class BeanELResolver extends ELResolver {
         if (Modifier.isPublic (cl.getModifiers ())) {
             return method;
         }
+
+        return getMethodFromInterfaceOrSuperclass(cl, method);
+    }
+
+    /*
+     * Get a version of the given method from a public interface or superclass.
+     */
+    static private Method getMethodFromInterfaceOrSuperclass(Class cl, Method method) {
+        if (method == null) {
+            return null;
+        }
         Class<?> [] interfaces = cl.getInterfaces ();
         for (int i = 0; i < interfaces.length; i++) {
             Class<?> c = interfaces[i];
@@ -734,6 +756,19 @@ public class BeanELResolver extends ELResolver {
                                            property}));
         }
         return bp;
+    }
+
+    static private void setAccessible(final Method m) {
+        if (System.getSecurityManager() == null) {
+            m.setAccessible(true);
+        } else {
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                    m.setAccessible(true);
+                    return null;
+                }
+            });
+        }
     }
 }
 
