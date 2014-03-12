@@ -61,6 +61,8 @@ package javax.el;
 import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Constructor;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Properties;
 
 import org.jboss.el.cache.FactoryFinderCache;
@@ -131,7 +133,16 @@ class FactoryFinder {
     {
         ClassLoader classLoader;
         try {
-            classLoader = Thread.currentThread().getContextClassLoader();
+            if (System.getSecurityManager() == null) {
+                classLoader = Thread.currentThread().getContextClassLoader();
+            } else {
+                classLoader = (ClassLoader)AccessController.doPrivileged(
+                new PrivilegedAction() {
+                   public Object run() {
+                       return Thread.currentThread().getContextClassLoader();
+                   }
+              });
+          }
         } catch (Exception x) {
             throw new ELException(x.toString(), x);
         }
