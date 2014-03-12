@@ -58,6 +58,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.lang.reflect.Constructor;
 import java.util.Properties;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import org.jboss.el.cache.FactoryFinderCache;
 
@@ -127,10 +129,19 @@ class FactoryFinder {
     {
         ClassLoader classLoader;
         try {
-            classLoader = Thread.currentThread().getContextClassLoader();
-        } catch (Exception x) {
-            throw new ELException(x.toString(), x);
-        }
+            if (System.getSecurityManager() == null) {
+                classLoader = Thread.currentThread().getContextClassLoader();
+            } else {
+                classLoader = (ClassLoader)AccessController.doPrivileged(
+                new PrivilegedAction() {
+		    public Object run() {
+			return Thread.currentThread().getContextClassLoader();
+		    }
+	        });
+           }
+         } catch (Exception x) {
+             throw new ELException(x.toString(), x);
+         }
 
         final String deploymentFactoryClassName = FactoryFinderCache.loadImplementationClassName(factoryId, classLoader);
         if(deploymentFactoryClassName != null && !deploymentFactoryClassName.equals("")) {
@@ -171,4 +182,3 @@ class FactoryFinder {
         return newInstance(fallbackClassName, classLoader, properties);
     }
 }
-
