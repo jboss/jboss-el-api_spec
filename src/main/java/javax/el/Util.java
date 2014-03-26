@@ -55,7 +55,7 @@ class Util {
             }
         }
         ResourceBundle bundle = ResourceBundle.getBundle(
-                "javax.el.LocalStrings", locale);
+                "javax.el.PrivateMessages", locale);
         try {
             String template = bundle.getString(name);
             if (props != null) {
