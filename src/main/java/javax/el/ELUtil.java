@@ -90,8 +90,14 @@ class ELUtil {
     private ELUtil() {
     }
     
+/*  For testing Backward Compatibility option
+    static java.util.Properties properties = new java.util.Properties();
+    static {
+        properties.setProperty("javax.el.bc2.2", "true");
+    }
+*/
     public static ExpressionFactory exprFactory =
-        ExpressionFactory.newInstance();
+        ExpressionFactory.newInstance(/*properties*/);
 
     /**
      * <p>The <code>ThreadLocal</code> variable used to record the
@@ -279,31 +285,7 @@ class ELUtil {
                              Class<?>[] paramTypes,
                              Object[] params,
                              boolean staticOnly) {
-
-        if (paramTypes != null) {
-            try {
-                Method m = klass.getMethod(method, paramTypes);
-                int mod = m.getModifiers();
-                if (Modifier.isPublic(mod) && 
-                    (!staticOnly || Modifier.isStatic(mod))) {
-                    return m;
-                }
-            } catch (java.lang.NoSuchMethodException ex) {
-            }
-            throw new MethodNotFoundException("Method " + method +
-                           "for class " + klass +
-                           " not found or accessible");
-        }
-
-        int paramCount = (params == null)? 0: params.length;
-        for (Method m: klass.getMethods()) {
-            if (m.getName().equals(method) && (
-                         m.isVarArgs() ||
-                         m.getParameterTypes().length==paramCount)){
-                return m;
-            }
-        }
-        throw new MethodNotFoundException("Method " + method + " not found");
+        return Util.findMethod(klass, method, paramTypes, params);
     }
 
     static Object invokeMethod(ELContext context,
