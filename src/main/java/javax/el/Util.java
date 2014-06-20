@@ -375,11 +375,6 @@ class Util {
             }
         }
 
-        if (nonMatchClass == null) {
-            // Null will always be ambiguous
-            return null;
-        }
-
         for (Wrapper c : candidates) {
            if (c.getParameterTypes()[nonMatchIndex] ==
                    paramTypes[nonMatchIndex]) {
@@ -387,6 +382,32 @@ class Util {
                // Result is ambiguous
                return null;
            }
+        }
+
+        if (nonMatchClass == null) {
+            // Since null is ambiguous, return the most general method, if possible.
+            Class<?> mostGeneralType = null;
+            Wrapper mostGeneralMethod = null;
+            boolean generalMatchFound = false;
+            for (Wrapper c : candidates) {
+                Class<?> candidateType = c.getParameterTypes()[nonMatchIndex];
+                if (mostGeneralType == null) {
+                    mostGeneralType = candidateType;
+                    mostGeneralMethod = c;
+                } else if (candidateType.isAssignableFrom(mostGeneralType)) {
+                    mostGeneralType = candidateType;
+                    mostGeneralMethod = c;
+                    generalMatchFound = true;
+                } else if (mostGeneralType.isAssignableFrom(candidateType)) {
+                    generalMatchFound = true;
+                }
+            }
+            if (generalMatchFound) {
+                return mostGeneralMethod;
+            } else {
+                // Could not determine the most general method
+                return null;
+            }
         }
 
         // Can't be null
@@ -623,7 +644,7 @@ class Util {
         public static List<Wrapper> wrap(Method[] methods, String name) {
             List<Wrapper> result = new ArrayList<>();
             for (Method method : methods) {
-                if (method.getName().equals(name)) {
+                if (method.getName().equals(name) && !method.isBridge()) {
                     result.add(new MethodWrapper(method));
                 }
             }
