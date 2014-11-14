@@ -21,9 +21,12 @@
  */
 package javax.el;
 
+import java.beans.IntrospectionException;
+import java.beans.PropertyDescriptor;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.text.MessageFormat;
@@ -456,31 +459,31 @@ class Util {
             return true;
         }
 
-        Class<?> targetClass;
-        if (target.isPrimitive()) {
-            if (target == Boolean.TYPE) {
-                targetClass = Boolean.class;
-            } else if (target == Character.TYPE) {
-                targetClass = Character.class;
-            } else if (target == Byte.TYPE) {
-                targetClass = Byte.class;
-            } else if (target == Short.TYPE) {
-                targetClass = Short.class;
-            } else if (target == Integer.TYPE) {
-                targetClass = Integer.class;
-            } else if (target == Long.TYPE) {
-                targetClass = Long.class;
-            } else if (target == Float.TYPE) {
-                targetClass = Float.class;
-            } else {
-                targetClass = Double.class;
-            }
-        } else {
-            targetClass = target;
-        }
-        return targetClass.isAssignableFrom(src);
+        Class<?> srcClass = src.isPrimitive() ? primitiveToWrapperClass(src) : src;
+        Class<?> targetClass = target.isPrimitive() ? primitiveToWrapperClass(target) : target;
+
+        return targetClass.isAssignableFrom(srcClass);
     }
 
+    private static Class<?> primitiveToWrapperClass(Class<?> target) {
+        if (target == Boolean.TYPE) {
+            return Boolean.class;
+        } else if (target == Character.TYPE) {
+        	return Character.class;
+        } else if (target == Byte.TYPE) {
+        	return Byte.class;
+        } else if (target == Short.TYPE) {
+        	return Short.class;
+        } else if (target == Integer.TYPE) {
+        	return Integer.class;
+        } else if (target == Long.TYPE) {
+        	return Long.class;
+        } else if (target == Float.TYPE) {
+        	return Float.class;
+        } else {
+        	return Double.class;
+        }
+    }
 
     /*
      * This method duplicates code in org.apache.el.util.ReflectionUtil. When
@@ -638,6 +641,46 @@ class Util {
         return parameters;
     }
 
+	/**
+	 * Find valid properties outside from JavaBeans standard. A property is
+	 * considered valid when it has public methods (likes set/get) with the same
+	 * field name.
+	 */
+	static List<PropertyDescriptor> findPropertiesOutsideFromJavaBeansStandard(Class<?> baseClass) {
+		List<PropertyDescriptor> properties = new ArrayList<>();
+
+		for (Field field : baseClass.getDeclaredFields()) {
+			Method readMethod = findReadMethodBy(field, baseClass);
+			Method writeMethod = findWriteMethodBy(field, baseClass);
+			
+			if (readMethod != null || writeMethod != null) {
+				try {
+					properties.add(new PropertyDescriptor(field.getName(), readMethod, writeMethod));
+				} catch (IntrospectionException e) {
+					throw new ELException(e);
+				}
+			}
+		}
+		return properties;
+	}
+
+	static private Method findReadMethodBy(Field field, Class<?> baseClass) {
+		Method method = findMethod(baseClass, field.getName());
+		return (method != null && isAssignableFrom(method.getReturnType(), field.getType())) ? method : null;
+	}
+
+	static private Method findWriteMethodBy(Field field, Class<?> baseClass) {
+		Method method = findMethod(baseClass, field.getName(), field.getType());
+		return (method != null && void.class.equals(method.getReturnType())) ? method : null;
+	}
+
+	static private Method findMethod(Class<?> baseClass, String name, Class<?>... parameterTypes) {
+		try {
+			return baseClass.getMethod(name, parameterTypes);
+		} catch (NoSuchMethodException | SecurityException e) {
+			return null;
+		}
+	}
 
     private abstract static class Wrapper {
 

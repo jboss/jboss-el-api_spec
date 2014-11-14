@@ -214,8 +214,7 @@ public class BeanELResolver extends ELResolver {
      */
     final static class BeanProperties {
 
-        private final Map<String, BeanProperty> propertyMap =
-            new HashMap<String, BeanProperty>();
+        private final Map<String, BeanProperty> propertyMap = new HashMap<String, BeanProperty>();
                                                                                 
         public BeanProperties(Class<?> baseClass) {
             PropertyDescriptor[] descriptors;
@@ -226,8 +225,13 @@ public class BeanELResolver extends ELResolver {
                 throw new ELException(ie);
             }
             for (PropertyDescriptor pd: descriptors) {
-                propertyMap.put(pd.getName(),
-                                new BeanProperty(baseClass, pd));
+                propertyMap.put(pd.getName(), new BeanProperty(baseClass, pd));
+            }
+            
+            for (PropertyDescriptor pd : Util.findPropertiesOutsideFromJavaBeansStandard(baseClass)) {
+            	if (!propertyMap.containsKey(pd.getName())) {
+            		propertyMap.put(pd.getName(), new BeanProperty(baseClass, pd));
+            	}
             }
         }
                                                                                 
