@@ -739,30 +739,6 @@ public class BeanELResolver extends ELResolver {
         return bp;
     }
 
-    private void removeFromMap(SoftConcurrentHashMap map, ClassLoader classloader) {
-        Iterator<Class<?>> iter = map.keySet().iterator();
-        while (iter.hasNext()) {
-            Class mbeanClass = iter.next();
-            if (classloader.equals(mbeanClass.getClassLoader())) {
-                iter.remove();
-            }
-        }
-
-    }
-
-    /*
-     * This method is not part of the API, though it can be used (reflectively) by clients of this class to remove entries from
-     * the cache when the beans are being unloaded.
-     *
-     * A note about why WeakHashMap is not used. Measurements has shown that ConcurrentHashMap is much more scalable than
-     * synchronized WeakHashMap. A manual purge seems to be a good compromise.
-     *
-     * @param classloader The classLoader used to load the beans.
-     */
-    private void purgeBeanClasses(ClassLoader classloader) {
-        removeFromMap(properties, classloader);
-    }
-
     private Method findMethod(Object base, String method,
                               Class<?>[] paramTypes, Object[] params) {
 
