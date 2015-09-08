@@ -58,21 +58,20 @@
 
 package javax.el;
 
+
+import org.jboss.el.cache.BeanPropertiesCache;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.ref.SoftReference;
-import java.lang.ref.ReferenceQueue;
 import java.beans.FeatureDescriptor;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.beans.IntrospectionException;
 import java.util.Iterator;
 import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
+
+import static org.jboss.el.cache.BeanPropertiesCache.BeanProperties;
+import static org.jboss.el.cache.BeanPropertiesCache.BeanProperty;
 
 /**
  * Defines property resolution behavior on objects using the JavaBeans
@@ -113,128 +112,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class BeanELResolver extends ELResolver {
 
-    static private class BPSoftReference extends SoftReference<BeanProperties> {
-        final Class<?> key;
-        BPSoftReference(Class<?> key, BeanProperties beanProperties,
-                        ReferenceQueue<BeanProperties> refQ) {
-            super(beanProperties, refQ);
-            this.key = key;
-        }
-    }
-
-    static private class SoftConcurrentHashMap extends
-                ConcurrentHashMap<Class<?>, BeanProperties> {
-
-        private static final int CACHE_INIT_SIZE = 1024;
-        private ConcurrentHashMap<Class<?>, BPSoftReference> map =
-            new ConcurrentHashMap<Class<?>, BPSoftReference>(CACHE_INIT_SIZE);
-        private ReferenceQueue<BeanProperties> refQ =
-                        new ReferenceQueue<BeanProperties>();
-
-        // Remove map entries that have been placed on the queue by GC.
-        private void cleanup() {
-            BPSoftReference BPRef = null;
-            while ((BPRef = (BPSoftReference)refQ.poll()) != null) {
-                map.remove(BPRef.key);
-            }
-        }
-
-        @Override
-        public BeanProperties put(Class<?> key, BeanProperties value) {
-            cleanup();
-            BPSoftReference prev =
-                map.put(key, new BPSoftReference(key, value, refQ));
-            return prev == null? null: prev.get();
-        }
-
-        @Override
-        public BeanProperties putIfAbsent(Class<?> key, BeanProperties value) {
-            cleanup();
-            BPSoftReference prev =
-                map.putIfAbsent(key, new BPSoftReference(key, value, refQ));
-            return prev == null? null: prev.get();
-        }
-
-        @Override
-        public BeanProperties get(Object key) {
-            cleanup();
-            BPSoftReference BPRef = map.get(key);
-            if (BPRef == null) {
-                return null;
-            }
-            if (BPRef.get() == null) {
-                // value has been garbage collected, remove entry in map
-                map.remove(key);
-                return null;
-            }
-            return BPRef.get();
-        }
-    }
-
     private boolean isReadOnly;
-
-    private static final SoftConcurrentHashMap properties =
-                new SoftConcurrentHashMap();
-
-    /*
-     * Defines a property for a bean.
-     */
-    final static class BeanProperty {
-
-        private Method readMethod;
-        private Method writeMethod;
-        private PropertyDescriptor descriptor;
-                                                                                
-        public BeanProperty(Class<?> baseClass,
-                            PropertyDescriptor descriptor) {
-            this.descriptor = descriptor;
-            readMethod = getMethod(baseClass, descriptor.getReadMethod());
-            writeMethod = getMethod(baseClass, descriptor.getWriteMethod());
-        }
-                                                                                
-        public Class getPropertyType() {
-            return descriptor.getPropertyType();
-        }
-                                                                                
-        public boolean isReadOnly() {
-            return getWriteMethod() == null;
-        }
-                                                                                
-        public Method getReadMethod() {
-            return readMethod;
-        }
-                                                                                
-        public Method getWriteMethod() {
-            return writeMethod;
-        }
-    }
-                                                                                
-    /*
-     * Defines the properties for a bean.
-     */
-    final static class BeanProperties {
-
-        private final Map<String, BeanProperty> propertyMap =
-            new HashMap<String, BeanProperty>();
-                                                                                
-        public BeanProperties(Class<?> baseClass) {
-            PropertyDescriptor[] descriptors;
-            try {
-                BeanInfo info = Introspector.getBeanInfo(baseClass);
-                descriptors = info.getPropertyDescriptors();
-            } catch (IntrospectionException ie) {
-                throw new ELException(ie);
-            }
-            for (PropertyDescriptor pd: descriptors) {
-                propertyMap.put(pd.getName(),
-                                new BeanProperty(baseClass, pd));
-            }
-        }
-                                                                                
-        public BeanProperty getBeanProperty(String property) {
-            return propertyMap.get(property);
-        }
-    }
 
     /**
      * Creates a new read/write <code>BeanELResolver</code>.
@@ -526,7 +404,7 @@ public class BeanELResolver extends ELResolver {
         }
         Method m = ELUtil.findMethod(base.getClass(), method.toString(),
                                     paramTypes,params, false);
-        m = getMethod(base.getClass(), m);
+        m = BeanPropertiesCache.getMethod(base.getClass(), m);
         for (Object p: params) {
             // If the parameters is a LambdaExpression, set the ELContext
             // for its evaluation
@@ -672,48 +550,6 @@ public class BeanELResolver extends ELResolver {
         return Object.class;
     }
 
-    /*
-     * Get a public method form a public class or interface of a given method.
-     * Note that if a PropertyDescriptor is obtained for a non-public class that
-     * implements a public interface, the read/write methods will be for the
-     * class, and therefore inaccessible.  To correct this, a version of the
-     * same method must be found in a superclass or interface.
-     **/
-
-    static private Method getMethod(Class<?> cl, Method method) {
-
-        if (method == null) {
-            return null;
-        }
-
-        if (Modifier.isPublic (cl.getModifiers ())) {
-            return method;
-        }
-        Class<?> [] interfaces = cl.getInterfaces ();
-        for (int i = 0; i < interfaces.length; i++) {
-            Class<?> c = interfaces[i];
-            Method m = null;
-            try {
-                m = c.getMethod(method.getName(), method.getParameterTypes());
-                c = m.getDeclaringClass();
-                if ((m = getMethod(c, m)) != null)
-                    return m;
-            } catch (NoSuchMethodException ex) {
-            }
-        }
-        Class<?> c = cl.getSuperclass();
-        if (c != null) {
-            Method m = null;
-            try {
-                m = c.getMethod(method.getName(), method.getParameterTypes());
-                c = m.getDeclaringClass();
-                if ((m = getMethod(c, m)) != null)
-                    return m;
-            } catch (NoSuchMethodException ex) {
-            }
-        }
-        return null;
-    }
 
     private BeanProperty getBeanProperty(ELContext context,
                                          Object base,
@@ -721,10 +557,10 @@ public class BeanELResolver extends ELResolver {
 
         String property = prop.toString();
         Class baseClass = base.getClass();
-        BeanProperties bps = properties.get(baseClass);
+        BeanProperties bps = BeanPropertiesCache.getProperties().get(baseClass);
         if (bps == null) {
             bps = new BeanProperties(baseClass);
-            properties.put(baseClass, bps);
+            BeanPropertiesCache.getProperties().put(baseClass, bps);
         }
         BeanProperty bp = bps.getBeanProperty(property);
         if (bp == null) {

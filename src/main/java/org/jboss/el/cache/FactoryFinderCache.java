@@ -59,6 +59,7 @@ public class FactoryFinderCache {
      * @param classLoader The class loader to remove
      */
     public static void clearClassLoader(final ClassLoader classLoader) {
+        BeanPropertiesCache.clear(classLoader);
         final Iterator<Map.Entry<CacheKey, String>> it = CLASS_CACHE.entrySet().iterator();
         while (it.hasNext()) {
             final CacheKey key = it.next().getKey();
