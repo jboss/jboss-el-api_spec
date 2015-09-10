@@ -36,7 +36,22 @@
     <url>https://github.com/jboss/jboss-el-api_spec</url>
     <tag>HEAD</tag>
   </scm>
-  
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish</groupId>
+      <artifactId>javax.el-impl</artifactId>
+      <version>3.0.1-b08-jbossorg-1</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <!-- Include LICENSE.txt in the META-INF directory -->
