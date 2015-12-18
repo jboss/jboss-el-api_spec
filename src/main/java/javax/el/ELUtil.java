@@ -259,14 +259,10 @@ class ELUtil {
         Class[] parameterTypes = c.getParameterTypes();
         Object[] parameters = null;
         if (parameterTypes.length > 0) {
-            if (c.isVarArgs()) {
-                // TODO
-            } else {
-                parameters = new Object[parameterTypes.length];
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    parameters[i] = context.convertToType(params[i],
-                                                          parameterTypes[i]);
-                }
+            parameters = new Object[parameterTypes.length];
+            for (int i = 0; i < parameterTypes.length; i++) {
+                parameters[i] = context.convertToType(params[i],
+                                                      parameterTypes[i]);
             }
         }
         try {
@@ -294,14 +290,10 @@ class ELUtil {
         Class[] parameterTypes = m.getParameterTypes();
         Object[] parameters = null;
         if (parameterTypes.length > 0) {
-            if (m.isVarArgs()) {
-                // TODO
-            } else {
-                parameters = new Object[parameterTypes.length];
-                for (int i = 0; i < parameterTypes.length; i++) {
-                    parameters[i] = context.convertToType(params[i],
-                                                          parameterTypes[i]);
-                }
+            parameters = new Object[parameterTypes.length];
+            for (int i = 0; i < parameterTypes.length; i++) {
+                parameters[i] = context.convertToType(params[i],
+                                                      parameterTypes[i]);
             }
         }
         try {
