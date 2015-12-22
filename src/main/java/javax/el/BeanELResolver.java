@@ -735,15 +735,11 @@ public class BeanELResolver extends ELResolver {
         Object[] parameters = null;
         if (parameterTypes.length > 0) {
             ExpressionFactory exprFactory = ExpressionFactory.newInstance();
-            if (m.isVarArgs()) {
-                // TODO
-            } else {
-                parameters = new Object[parameterTypes.length];
+            parameters = new Object[parameterTypes.length];
                 for (int i = 0; i < parameterTypes.length; i++) {
                     parameters[i] = exprFactory.coerceToType(params[i],
                                                            parameterTypes[i]);
                 }
-            }
         }
         try {
             // If m is a public method in a non-public class that implements a public interface
