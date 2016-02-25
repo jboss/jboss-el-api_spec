@@ -644,7 +644,7 @@ class Util {
         public static List<Wrapper> wrap(Method[] methods, String name) {
             List<Wrapper> result = new ArrayList<>();
             for (Method method : methods) {
-                if (method.getName().equals(name) && !method.isBridge()) {
+                if (method.getName().equals(name)) {
                     result.add(new MethodWrapper(method));
                 }
             }
