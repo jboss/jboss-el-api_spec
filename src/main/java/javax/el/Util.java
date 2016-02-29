@@ -198,7 +198,7 @@ class Util {
 
         Method[] methods = clazz.getMethods();
 
-        List<Wrapper> wrappers = Wrapper.wrap(methods, methodName);
+        List<Wrapper> wrappers = Wrapper.wrap(clazz, methods, methodName);
 
         Wrapper result = findWrapper(
                 clazz, wrappers, methodName, paramTypes, paramValues);
@@ -641,10 +641,11 @@ class Util {
 
     private abstract static class Wrapper {
 
-        public static List<Wrapper> wrap(Method[] methods, String name) {
+        public static List<Wrapper> wrap(Class<?> clazz, Method[] methods, String name) {
             List<Wrapper> result = new ArrayList<>();
             for (Method method : methods) {
-                if (method.getName().equals(name)) {
+                if (method.getName().equals(name)
+                        && !(method.isBridge() && !method.getDeclaringClass().equals(clazz))) {
                     result.add(new MethodWrapper(method));
                 }
             }
