@@ -45,6 +45,17 @@ public class BeanPropertiesCache {
             }
         }
 
+        protected void clear(ClassLoader classLoader) {
+            Iterator<Map.Entry<Class<?>, BPSoftReference>> it = map.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry<Class<?>, BPSoftReference> entry = it.next();
+                if(entry.getKey().getClassLoader() == classLoader) {
+                    it.remove();
+                }
+            }
+
+        }
+
         @Override
         public BeanProperties put(Class<?> key, BeanProperties value) {
             cleanup();
@@ -191,12 +202,6 @@ public class BeanPropertiesCache {
     }
 
     static void clear(ClassLoader classLoader) {
-        Iterator<Map.Entry<Class<?>, BeanProperties>> it = properties.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<Class<?>, BeanProperties> entry = it.next();
-            if(entry.getKey().getClassLoader() == classLoader) {
-                it.remove();
-            }
-        }
+        properties.clear(classLoader);
     }
 }
