@@ -165,7 +165,7 @@ public abstract class ExpressionFactory {
      * </ul>
      */
     public static ExpressionFactory newInstance() {
-        return ExpressionFactory.newInstance(null);
+        return ELUtil.newExpressionFactory();
     }
 
     /**

@@ -58,10 +58,12 @@
 
 package javax.el;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Locale;
@@ -82,6 +84,7 @@ import java.util.ResourceBundle;
  * @author Kin-man Chung
  */
 class ELUtil {
+    private static final String EL_BC22_PROPERTY= "org.wildfly.el.bc2.2";
     
     /**
      * <p>This class may not be constructed.</p>
@@ -90,14 +93,21 @@ class ELUtil {
     private ELUtil() {
     }
     
-/*  For testing Backward Compatibility option
+
     static java.util.Properties properties = new java.util.Properties();
     static {
-        properties.setProperty("javax.el.bc2.2", "true");
+        setupProperties();
     }
-*/
-    public static ExpressionFactory exprFactory =
-        ExpressionFactory.newInstance(/*properties*/);
+
+    private static void setupProperties(){
+        boolean bc22Enabled = AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> Boolean.getBoolean(EL_BC22_PROPERTY));
+        if (bc22Enabled){
+            properties.setProperty("javax.el.bc2.2", "true");
+        }
+    }
+
+
+    public static ExpressionFactory exprFactory = ExpressionFactory.newInstance(properties);
 
     /**
      * <p>The <code>ThreadLocal</code> variable used to record the
@@ -225,6 +235,10 @@ class ELUtil {
 
     static ExpressionFactory getExpressionFactory() {
         return exprFactory;
+    }
+
+    static ExpressionFactory newExpressionFactory() {
+        return ExpressionFactory.newInstance(properties);
     }
         
     static Constructor<?> findConstructor(Class<?> klass,

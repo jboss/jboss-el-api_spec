@@ -111,7 +111,7 @@ class Util {
             try {
                 factory = cacheValue.getExpressionFactory();
                 if (factory == null) {
-                    factory = ExpressionFactory.newInstance();
+                    factory = ELUtil.getExpressionFactory();
                     cacheValue.setExpressionFactory(factory);
                 }
             } finally {

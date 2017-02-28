@@ -136,12 +136,8 @@ class FactoryFinder {
             if (System.getSecurityManager() == null) {
                 classLoader = Thread.currentThread().getContextClassLoader();
             } else {
-                classLoader = (ClassLoader)AccessController.doPrivileged(
-                new PrivilegedAction() {
-                   public Object run() {
-                       return Thread.currentThread().getContextClassLoader();
-                   }
-              });
+                classLoader = AccessController.doPrivileged(
+                        (PrivilegedAction<ClassLoader>) () -> Thread.currentThread().getContextClassLoader());
           }
         } catch (Exception x) {
             throw new ELException(x.toString(), x);
