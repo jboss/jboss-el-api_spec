@@ -94,20 +94,18 @@ class ELUtil {
     }
     
 
-    static java.util.Properties properties = new java.util.Properties();
+    static final java.util.Properties properties = new java.util.Properties();
+    private static ExpressionFactory exprFactory = null;
     static {
         setupProperties();
     }
 
     private static void setupProperties(){
         boolean bc22Enabled = AccessController.doPrivileged((PrivilegedAction<Boolean>) () -> Boolean.getBoolean(EL_BC22_PROPERTY));
-        if (bc22Enabled){
+        if (bc22Enabled) {
             properties.setProperty("javax.el.bc2.2", "true");
         }
     }
-
-
-    public static ExpressionFactory exprFactory = ExpressionFactory.newInstance(properties);
 
     /**
      * <p>The <code>ThreadLocal</code> variable used to record the
@@ -234,13 +232,12 @@ class ELUtil {
     }
 
     static ExpressionFactory getExpressionFactory() {
+        if (exprFactory == null){
+            exprFactory = ExpressionFactory.newInstance(properties);
+        }
         return exprFactory;
     }
 
-    static ExpressionFactory newExpressionFactory() {
-        return ExpressionFactory.newInstance(properties);
-    }
-        
     static Constructor<?> findConstructor(Class<?> klass,
                                   Class<?>[] paramTypes,
                                   Object[] params) {

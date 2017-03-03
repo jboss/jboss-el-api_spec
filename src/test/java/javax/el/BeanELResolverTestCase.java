@@ -43,7 +43,7 @@ public class BeanELResolverTestCase {
     @Test
     public void testVarArgs() {
         final BeanELResolver resolver = new BeanELResolver();
-        final ELContext context = new StandardELContext(ELUtil.getExpressionFactory());
+        final ELContext context = new StandardELContext(ExpressionFactory.newInstance());
         final Greeter base = new Greeter();
         final String method = "greet";
         final Class[] paramTypes = new Class[] { String[].class };
@@ -55,7 +55,7 @@ public class BeanELResolverTestCase {
     @Test
     public void testVarArgs2() {
         final BeanELResolver resolver = new BeanELResolver();
-        final ELContext context = new StandardELContext(ELUtil.getExpressionFactory());
+        final ELContext context = new StandardELContext(ExpressionFactory.newInstance());
         final Greeter base = new Greeter();
         final String method = "greet2";
         final Class[] paramTypes = new Class[] { String.class, String[].class };
