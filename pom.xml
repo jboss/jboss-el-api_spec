@@ -9,13 +9,13 @@
     <version>25</version>
   </parent>
   
-  <groupId>org.jboss.spec.javax.el</groupId>
-  <artifactId>jboss-el-api_3.0_spec</artifactId>
-  <version>1.0.14.Final-SNAPSHOT</version>
+  <groupId>org.jboss.spec.jakarta.el</groupId>
+  <artifactId>jboss-el-api_4.0_spec</artifactId>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>Expression Language 3.0 API</name>
-  <description>JSR-341 Expression Language 3.0 API</description>
+  <name>Expression Language 4.0 API</name>
+  <description>Jakarta Expression Language 4.0 API</description>
 
   <licenses>
     <license>
@@ -45,6 +45,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <!-- TODO: needs to be updated to build that uses jakarta-el with jakarta package namespace -->
       <groupId>org.glassfish</groupId>
       <artifactId>javax.el-impl</artifactId>
       <version>3.0.1-b08-jbossorg-1</version>
@@ -100,16 +101,16 @@
               <addDefaultSpecificationEntries>false</addDefaultSpecificationEntries>
             </manifest>
             <manifestEntries>
-              <Automatic-Module-Name>beta.jboss.el.api_3_0</Automatic-Module-Name>
+              <Automatic-Module-Name>beta.jboss.el.api_4_0</Automatic-Module-Name>
             </manifestEntries>
           </archive>
           <instructions>
-            <Specification-Title>JSR-341 Expression Language API</Specification-Title>
-            <Specification-Vendor>Oracle</Specification-Vendor>
-            <Specification-Version>3.0</Specification-Version>
+            <Specification-Title>Jakarta Expression Language API</Specification-Title>
+            <Specification-Vendor>Eclipse</Specification-Vendor>
+            <Specification-Version>4.0</Specification-Version>
             <!-- Set the package version to match the spec version -->
             <Export-Package>
-              javax.el*;version=3.0
+              javax.el*;version=4.0
             </Export-Package>
           </instructions>
         </configuration>
@@ -131,9 +132,9 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Specification-Title>JSR-341 Expression Language API</Specification-Title>
-              <Specification-Vendor>Oracle</Specification-Vendor>
-              <Specification-Version>3.0</Specification-Version>
+              <Specification-Title>Jakarta Expression Language API</Specification-Title>
+              <Specification-Vendor>Eclipse</Specification-Vendor>
+              <Specification-Version>4.0</Specification-Version>
             </manifestEntries>
           </archive>
         </configuration>

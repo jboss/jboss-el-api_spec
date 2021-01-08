@@ -1,6 +1,6 @@
 package org.jboss.el.cache;
 
-import javax.el.ELException;
+import jakarta.el.ELException;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
